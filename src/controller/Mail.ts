@@ -1,63 +1,73 @@
-// As we were asked to not Use External APIs
-// We create our own APIs
+// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/naming-convention */
 
-import fetch from 'node-fetch';
+import {
+    RFC2822Email,
+    EncodeRFC2822,
+    GenerateRFC2822
+} from '../gauth-utils/Mail';
+import { RefreshAccessToken } from '../gauth-utils/Token';
+import UserStorage from '../resources/UsersStorage';
+import ErrorEvents from '../events/ErrorEvents';
 
-import { MailApiUri } from '../config/GMail';
+// Send RFC2822 Mail
+export async function SendRawMail({
+    raw,
+    email: email_
+}: {
+    raw: string;
+    email: string;
+}) {
+    const email = String(email_);
+    await UserStorage.LoadFile();
+    const user = UserStorage.Info[email];
 
-// https://stackoverflow.com/a/32591614/1691072
-// EMail is encoded in Base64 Encoded Format
-// Perform Encoding in RFC 2822 Standard
-export function EncodeResponse(data: string) {
-    return Buffer.from(data)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-}
-// Send the EMail to the server
-// Input is String in RFC 2822 standard
-export async function RFC2822Email(
-    accessToken: string,
-    raw: string
-) {
-    const response = await fetch(
-        String(`${MailApiUri}?access_token=${accessToken}`),
-        {
-            method: 'POST',
-            headers: {
-                'Content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                raw: raw
-            })
-        }
+    console.log('RFC2822 Text', raw);
+
+    if (user == null) {
+        ErrorEvents.emit('error', 'User Not Found');
+        throw new Error('User Not Found');
+    }
+    const { refresh_token } = user;
+    const access_token = (
+        await RefreshAccessToken(refresh_token)
+    )?.access_token;
+    if (access_token == null) {
+        ErrorEvents.emit(
+            'error',
+            'Unable to generate Access Token'
+        );
+        throw new Error('Unable to generate Access Token');
+    }
+
+    const json = await RFC2822Email(
+        access_token,
+        EncodeRFC2822(String(raw))
     );
-    const json = await response.json();
+    if (json.error != null) {
+        ErrorEvents.emit(
+            'error',
+            'Unable to Send Mail',
+            json.error
+        );
+        throw new Error(json.error);
+    }
+    console.log('Results of Sending mail are');
+    console.log(json);
     return json;
 }
 
-// Convert Headers from JSON to RFC 2822 standard
-// Content-Type: text/plain\n
-// From: sender@email.com
-function StringifyHeaders(
-    headers: Record<string, unknown>
-) {
-    return Object.entries(headers)
-        .map(([k, v]) => `${k.toUpperCase()}:${v}`)
-        .join('\n');
-}
-
-export function GenerateRFC2822(
-    headers: Record<string, unknown>,
-    body: string
-) {
-    return `${StringifyHeaders(headers).replace('\r', '')}
-
-
-${body.replace('\r', '')}`;
-}
-
-export function EncodeRFC2822(raw: string) {
-    return EncodeResponse(raw);
+export async function SendMail({
+    headers,
+    data,
+    email
+}: {
+    email: string;
+    headers: Record<string, unknown>;
+    data: string;
+}) {
+    return await SendRawMail({
+        raw: GenerateRFC2822(headers, data),
+        email: email
+    });
 }

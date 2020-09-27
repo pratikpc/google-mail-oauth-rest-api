@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import {
     AccessTokens,
     UserGetEmail
-} from '../controller/Token';
+} from '../gauth-utils/Token';
 import UserStorage from '../resources/UsersStorage';
 
 const AuthEvents = new EventEmitter();

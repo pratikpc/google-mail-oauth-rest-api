@@ -9,7 +9,7 @@ import UserStorage from '../resources/UsersStorage';
 import Auth from '../api/auth';
 import Users from '../api/users';
 import Email from '../api/mail';
-import { LoadWellKnownConfiguration } from '../controller/Token';
+import { LoadWellKnownConfiguration } from '../gauth-utils/Token';
 
 export default async function Loader(app: Application) {
     // https://stackoverflow.com/a/46475726

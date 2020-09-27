@@ -3,7 +3,7 @@ import StatusCode from 'http-status-codes';
 
 import url from 'url';
 import googleConfig from '../config/google';
-import { LoginUri } from '../controller/Token';
+import { LoginUri } from '../gauth-utils/Token';
 import AuthEvents from '../events/AuthEvents';
 
 export default function Auth(app: Router) {
