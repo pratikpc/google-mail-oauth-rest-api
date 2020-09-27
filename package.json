@@ -1,6 +1,6 @@
 {
     "name": "google-mail-oauth-rest-api",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Created a Node.JS Express based App to use GMail and OAuth2 using REST APIs instead of libraries",
     "main": "./dist/app.js",
     "scripts": {
